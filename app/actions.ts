@@ -117,7 +117,7 @@ export async function getGroupData(groupId: string) {
     const balances: Record<string, { userId: string; name: string; paid: number; owed: number; sent: number; received: number; net: number }> = {}
     
     // Initialize balances for all group members
-    group.members.forEach((m) => {
+    group.members.forEach((m: any) => {
       balances[m.userId] = {
         userId: m.userId,
         name: m.user.name,
@@ -130,11 +130,11 @@ export async function getGroupData(groupId: string) {
     })
 
     // Add paid amounts from expenses
-    group.expenses.forEach((e) => {
+    group.expenses.forEach((e: any) => {
       if (balances[e.paidById]) {
         balances[e.paidById].paid += e.amountInBase
       }
-      e.splits.forEach((s) => {
+      e.splits.forEach((s: any) => {
         if (balances[s.userId]) {
           balances[s.userId].owed += s.amount
         }
@@ -142,7 +142,7 @@ export async function getGroupData(groupId: string) {
     })
 
     // Add settlements
-    settlements.forEach((s) => {
+    settlements.forEach((s: any) => {
       if (balances[s.payerId]) {
         balances[s.payerId].sent += s.amount
       }
@@ -162,16 +162,16 @@ export async function getGroupData(groupId: string) {
 
     // Compute detailed audit ledger (Rohan's request)
     const ledgers: Record<string, any[]> = {}
-    group.members.forEach((m) => {
+    group.members.forEach((m: any) => {
       ledgers[m.userId] = []
     })
 
     // Populate ledgers chronologically
     // 1. Process expenses
-    group.expenses.forEach((e) => {
+    group.expenses.forEach((e: any) => {
       // If the user paid, they get credit for paid amount
       if (balances[e.paidById]) {
-        const userSplit = e.splits.find((s) => s.userId === e.paidById)
+        const userSplit = e.splits.find((s: any) => s.userId === e.paidById)
         const userOwes = userSplit ? userSplit.amount : 0
         ledgers[e.paidById].push({
           type: 'expense_paid',
@@ -190,7 +190,7 @@ export async function getGroupData(groupId: string) {
       }
 
       // If the user participated in the split (but was not the payer)
-      e.splits.forEach((s) => {
+      e.splits.forEach((s: any) => {
         if (s.userId !== e.paidById && balances[s.userId]) {
           ledgers[s.userId].push({
             type: 'expense_split',
@@ -211,7 +211,7 @@ export async function getGroupData(groupId: string) {
     })
 
     // 2. Process settlements
-    settlements.forEach((s) => {
+    settlements.forEach((s: any) => {
       if (balances[s.payerId]) {
         ledgers[s.payerId].push({
           type: 'settlement_sent',
@@ -379,11 +379,11 @@ export async function importResolvedData(
 
       // Add any new names as guest members
       const allNamesInImport = new Set<string>()
-      resolvedExpenses.forEach(e => {
+      resolvedExpenses.forEach((e: any) => {
         allNamesInImport.add(e.paidBy)
         e.splits.forEach((s: any) => allNamesInImport.add(s.name))
       })
-      resolvedSettlements.forEach(s => {
+      resolvedSettlements.forEach((s: any) => {
         allNamesInImport.add(s.payer)
         allNamesInImport.add(s.receiver)
       })
