@@ -9,22 +9,56 @@ interface MemberListProps {
   groupId: string;
 }
 
+const YEARS = [2024, 2025, 2026, 2027, 2028];
+const MONTHS = [
+  { value: 1, label: "Jan" },
+  { value: 2, label: "Feb" },
+  { value: 3, label: "Mar" },
+  { value: 4, label: "Apr" },
+  { value: 5, label: "May" },
+  { value: 6, label: "Jun" },
+  { value: 7, label: "Jul" },
+  { value: 8, label: "Aug" },
+  { value: 9, label: "Sep" },
+  { value: 10, label: "Oct" },
+  { value: 11, label: "Nov" },
+  { value: 12, label: "Dec" },
+];
+const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
+
 export default function MembersList({ initialMembers, groupId }: MemberListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [joinedAt, setJoinedAt] = useState("");
-  const [leftAt, setLeftAt] = useState("");
+  
+  // Date states as numbers to avoid parsing/timezone issues
+  const [joinedYear, setJoinedYear] = useState(2026);
+  const [joinedMonth, setJoinedMonth] = useState(2);
+  const [joinedDay, setJoinedDay] = useState(1);
+
+  const [leftYear, setLeftYear] = useState(2026);
+  const [leftMonth, setLeftMonth] = useState(3);
+  const [leftDay, setLeftDay] = useState(31);
+
   const [stillActive, setStillActive] = useState(true);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   const startEditing = (m: any) => {
     setEditingId(m.id);
-    setJoinedAt(new Date(m.joinedAt).toISOString().split("T")[0]);
+    const jDate = new Date(m.joinedAt);
+    setJoinedYear(jDate.getUTCFullYear());
+    setJoinedMonth(jDate.getUTCMonth() + 1);
+    setJoinedDay(jDate.getUTCDate());
+
     if (m.leftAt) {
-      setLeftAt(new Date(m.leftAt).toISOString().split("T")[0]);
+      const lDate = new Date(m.leftAt);
+      setLeftYear(lDate.getUTCFullYear());
+      setLeftMonth(lDate.getUTCMonth() + 1);
+      setLeftDay(lDate.getUTCDate());
       setStillActive(false);
     } else {
-      setLeftAt("");
+      setLeftYear(2026);
+      setLeftMonth(3);
+      setLeftDay(31);
       setStillActive(true);
     }
     setError(null);
@@ -35,27 +69,53 @@ export default function MembersList({ initialMembers, groupId }: MemberListProps
     setError(null);
   };
 
+  const isValidDate = (y: number, m: number, d: number) => {
+    const date = new Date(Date.UTC(y, m - 1, d));
+    return (
+      date.getUTCFullYear() === y &&
+      date.getUTCMonth() === m - 1 &&
+      date.getUTCDate() === d
+    );
+  };
+
   const handleSave = async (userId: string) => {
     setError(null);
-    if (!joinedAt) {
-      setError("Joined date is required.");
+
+    // Validate Join Date
+    if (!isValidDate(joinedYear, joinedMonth, joinedDay)) {
+      setError(`Invalid Joined Date selected (e.g. check the number of days in that month).`);
       return;
     }
-    if (!stillActive && !leftAt) {
-      setError("Departure date is required if not active.");
-      return;
+
+    // Validate Left Date
+    if (!stillActive) {
+      if (!isValidDate(leftYear, leftMonth, leftDay)) {
+        setError(`Invalid Departure Date selected (e.g. check the number of days in that month).`);
+        return;
+      }
+
+      const joinTime = Date.UTC(joinedYear, joinedMonth - 1, joinedDay);
+      const leftTime = Date.UTC(leftYear, leftMonth - 1, leftDay);
+      if (leftTime < joinTime) {
+        setError("Departure date cannot be before the join date.");
+        return;
+      }
     }
-    if (!stillActive && new Date(leftAt) < new Date(joinedAt)) {
-      setError("Departure date cannot be before join date.");
-      return;
-    }
+
+    const joinedDateStr = `${joinedYear}-${String(joinedMonth).padStart(2, "0")}-${String(
+      joinedDay
+    ).padStart(2, "0")}`;
+    
+    const leftDateStr = `${leftYear}-${String(leftMonth).padStart(2, "0")}-${String(
+      leftDay
+    ).padStart(2, "0")}`;
 
     startTransition(async () => {
       const result = await updateMemberMembership(
         groupId,
         userId,
-        joinedAt,
-        stillActive ? null : leftAt
+        joinedDateStr,
+        stillActive ? null : leftDateStr
       );
 
       if (result.success) {
@@ -69,7 +129,7 @@ export default function MembersList({ initialMembers, groupId }: MemberListProps
   return (
     <div>
       {error && (
-        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 text-red-500 rounded-lg text-sm">
+        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/35 text-red-500 rounded-lg text-sm transition-all">
           {error}
         </div>
       )}
@@ -77,7 +137,6 @@ export default function MembersList({ initialMembers, groupId }: MemberListProps
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {initialMembers.map((m: any) => {
           const isEditing = editingId === m.id;
-          const isActive = !m.leftAt;
 
           return (
             <div
@@ -121,32 +180,67 @@ export default function MembersList({ initialMembers, groupId }: MemberListProps
 
               {isEditing ? (
                 <div className="space-y-4 border-t border-[#30363D] pt-4 mt-2">
+                  {/* Joined Date Dropdowns */}
                   <div>
-                    <label className="block text-xs font-semibold text-[#8B949E] uppercase tracking-wider mb-1.5">
+                    <label className="block text-[10px] font-bold text-[#8B949E] uppercase tracking-widest mb-1.5">
                       Joined Date
                     </label>
-                    <input
-                      type="date"
-                      value={joinedAt}
-                      onChange={(e) => setJoinedAt(e.target.value)}
-                      disabled={isPending}
-                      className="w-full px-2.5 py-1.5 text-sm rounded-lg border border-[#30363D] bg-[#0D1117] text-[#E6EDF3] focus:border-[#00E5CC] focus:outline-none transition-colors"
-                    />
+                    <div className="grid grid-cols-3 gap-2">
+                      <select
+                        value={joinedDay}
+                        onChange={(e) => setJoinedDay(Number(e.target.value))}
+                        disabled={isPending}
+                        className="px-2 py-1.5 text-xs rounded-lg border border-[#30363D] bg-[#0D1117] text-[#E6EDF3] focus:border-[#00E5CC] focus:outline-none transition-colors cursor-pointer"
+                      >
+                        {DAYS.map((d) => (
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        value={joinedMonth}
+                        onChange={(e) => setJoinedMonth(Number(e.target.value))}
+                        disabled={isPending}
+                        className="px-2 py-1.5 text-xs rounded-lg border border-[#30363D] bg-[#0D1117] text-[#E6EDF3] focus:border-[#00E5CC] focus:outline-none transition-colors cursor-pointer"
+                      >
+                        {MONTHS.map((mon) => (
+                          <option key={mon.value} value={mon.value}>
+                            {mon.label}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        value={joinedYear}
+                        onChange={(e) => setJoinedYear(Number(e.target.value))}
+                        disabled={isPending}
+                        className="px-2 py-1.5 text-xs rounded-lg border border-[#30363D] bg-[#0D1117] text-[#E6EDF3] focus:border-[#00E5CC] focus:outline-none transition-colors cursor-pointer"
+                      >
+                        {YEARS.map((y) => (
+                          <option key={y} value={y}>
+                            {y}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
+                  {/* Active Toggle & Departure Date */}
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-3">
                       <input
                         type="checkbox"
                         id={`active-${m.id}`}
                         checked={stillActive}
                         onChange={(e) => setStillActive(e.target.checked)}
                         disabled={isPending}
-                        className="rounded border-[#30363D] bg-[#0D1117] text-[#00E5CC] focus:ring-[#00E5CC] h-4 w-4"
+                        className="rounded border-[#30363D] bg-[#0D1117] text-[#00E5CC] focus:ring-[#00E5CC] h-4 w-4 cursor-pointer"
                       />
                       <label
                         htmlFor={`active-${m.id}`}
-                        className="text-xs font-semibold text-[#8B949E] uppercase tracking-wider cursor-pointer"
+                        className="text-[10px] font-bold text-[#8B949E] uppercase tracking-widest cursor-pointer select-none"
                       >
                         Still Active Member
                       </label>
@@ -154,20 +248,54 @@ export default function MembersList({ initialMembers, groupId }: MemberListProps
 
                     {!stillActive && (
                       <div className="animate-fade-in-down">
-                        <label className="block text-xs font-semibold text-[#8B949E] uppercase tracking-wider mb-1.5">
+                        <label className="block text-[10px] font-bold text-[#8B949E] uppercase tracking-widest mb-1.5">
                           Departure Date
                         </label>
-                        <input
-                          type="date"
-                          value={leftAt}
-                          onChange={(e) => setLeftAt(e.target.value)}
-                          disabled={isPending}
-                          className="w-full px-2.5 py-1.5 text-sm rounded-lg border border-[#30363D] bg-[#0D1117] text-[#E6EDF3] focus:border-[#00E5CC] focus:outline-none transition-colors"
-                        />
+                        <div className="grid grid-cols-3 gap-2">
+                          <select
+                            value={leftDay}
+                            onChange={(e) => setLeftDay(Number(e.target.value))}
+                            disabled={isPending}
+                            className="px-2 py-1.5 text-xs rounded-lg border border-[#30363D] bg-[#0D1117] text-[#E6EDF3] focus:border-[#00E5CC] focus:outline-none transition-colors cursor-pointer"
+                          >
+                            {DAYS.map((d) => (
+                              <option key={d} value={d}>
+                                {d}
+                              </option>
+                            ))}
+                          </select>
+
+                          <select
+                            value={leftMonth}
+                            onChange={(e) => setLeftMonth(Number(e.target.value))}
+                            disabled={isPending}
+                            className="px-2 py-1.5 text-xs rounded-lg border border-[#30363D] bg-[#0D1117] text-[#E6EDF3] focus:border-[#00E5CC] focus:outline-none transition-colors cursor-pointer"
+                          >
+                            {MONTHS.map((mon) => (
+                              <option key={mon.value} value={mon.value}>
+                                {mon.label}
+                              </option>
+                            ))}
+                          </select>
+
+                          <select
+                            value={leftYear}
+                            onChange={(e) => setLeftYear(Number(e.target.value))}
+                            disabled={isPending}
+                            className="px-2 py-1.5 text-xs rounded-lg border border-[#30363D] bg-[#0D1117] text-[#E6EDF3] focus:border-[#00E5CC] focus:outline-none transition-colors cursor-pointer"
+                          >
+                            {YEARS.map((y) => (
+                              <option key={y} value={y}>
+                                {y}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     )}
                   </div>
 
+                  {/* Actions buttons */}
                   <div className="flex gap-2 justify-end pt-2 border-t border-[#30363D]">
                     <button
                       onClick={cancelEditing}
