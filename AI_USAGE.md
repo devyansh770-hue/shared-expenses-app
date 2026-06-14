@@ -1,6 +1,6 @@
 # AI_USAGE.md - AI Tooling Log
 
-This document lists the AI tools used, key prompts, and eight concrete instances where the AI generated incorrect code, how it was identified, and the engineering resolutions applied.
+This document lists the AI tools used, key prompts, and ten concrete cases where the AI generated incorrect code or logic, how these issues were identified, and the engineering resolutions applied.
 
 ---
 
@@ -14,7 +14,7 @@ This document lists the AI tools used, key prompts, and eight concrete instances
 
 ---
 
-## 2. Concrete Cases of AI Mistakes & Corrections
+## 2. Technical Debugging Cases
 
 ### Case 1: Prisma v7 schema.prisma Connection URL
 * **AI Mistake**: The AI generated a standard `schema.prisma` containing `url = "file:./dev.db"` inside the `datasource db` block.
@@ -39,10 +39,10 @@ This document lists the AI tools used, key prompts, and eight concrete instances
 
 ---
 
-### Case 3: Node `fs` and `path` Bundle Isolation in Server Actions
-* **AI Mistake**: The AI initially planned to import standard Node.js filesystem modules `fs` and `path` at the top level of Server Actions.
-* **How Identified**: Standard bundlers (Webpack/Turbopack) in Next.js attempt to compile imports for the client bundle. Top-level Node.js imports in shared actions files can trigger bundling errors indicating that the client cannot resolve `fs`.
-* **Correction**: We encapsulated the filesystem reads inside a Server Action using dynamic runtime `require` statements:
+### Case 3: Server/Client Module Boundary Isolation Error
+* **AI Mistake**: The AI placed Node.js filesystem APIs (`fs` and `path`) inside a utility module that was imported by client-side components.
+* **How Identified**: Next.js (Turbopack) failed client-side bundling, throwing errors stating that Node.js native libraries like `fs` could not be resolved in the browser context.
+* **Correction**: Encapsulated the filesystem reads inside a Server Action and used dynamic runtime `require` statements:
   ```typescript
   const fs = require('fs')
   const path = require('path')
@@ -51,36 +51,51 @@ This document lists the AI tools used, key prompts, and eight concrete instances
 
 ---
 
-### Case 4: React Hydration Mismatch Caused by Browser Extensions
-* **AI Mistake**: The AI omitted `suppressHydrationWarning` on the `<body>` element in `app/layout.tsx`.
-* **How Identified**: In development, browser password managers or translating extensions injected additional attributes (like `bis_register`) into the `<body>` tag, causing a React hydration mismatch. This stripped React event listeners, breaking the signup form button and eye-toggle interactions.
-* **Correction**: Added `suppressHydrationWarning` to the `<body>` element, informing React that it should ignore discrepancies in body attributes during client-side hydration.
-
----
-
-### Case 5: Missing Required Fields during User Database Creation
-* **AI Mistake**: When creating user records inside `seedGroupAndUsers`, `importResolvedData`, and `addMemberToGroup`, the AI only passed `name` in `db.user.create`, forgetting that the database schema marks `email` and `emailVerified` as required.
+### Case 4: Missing Required Database Fields during Seeding
+* **AI Mistake**: When creating user records inside `seedGroupAndUsers`, the AI only passed `name: seed.name` in `db.user.create`, forgetting that the database schema marks `email` and `emailVerified` as required.
 * **How Identified**: Executing the dashboard database seed action triggered a Prisma validation exception: `Argument email is missing`.
 * **Correction**: Modified all user creation actions to dynamically construct and save a standard format-compliant email address (e.g. `${name.toLowerCase()}@example.com`).
 
 ---
 
-### Case 6: Stale PrismaClient in Dev Server Process Cache
+### Case 5: Stale PrismaClient in Next.js Dev Server Process Cache
 * **AI Mistake**: The AI regenerated the database client using `npx prisma generate` after updating the schema, but assumed the active Next.js Turbopack development server would automatically pick up the new package definitions in `node_modules`.
 * **How Identified**: API routes continued to throw `PrismaClientValidationError` indicating that the `email` argument was unknown, because the running node process held the old compiled package in memory.
 * **Correction**: Terminated the process on port 3000 (`npx kill-port 3000`), cleared the `.next` compilation folder cache, and launched a fresh `npm run dev` task.
 
 ---
 
-### Case 7: Hardcoded Client Base URL vs Local Network IP Access
+### Case 6: Hardcoded Client Base URL vs Local Network IP Access
 * **AI Mistake**: The authentication client initialization was configured with a hardcoded `baseURL` fallback to `http://localhost:3000`.
 * **How Identified**: When accessing the development server from the network IP address (`http://172.22.124.119:3000`), the browser attempted to send sign-up fetches to `localhost:3000`, causing CORS/fetch errors because `localhost` was blocked or did not point to the server.
 * **Correction**: Updated `auth-client.ts` to dynamically retrieve `window.location.origin` if running in the browser, ensuring requests align with the domain from which the page was loaded.
 
 ---
 
-### Case 8: Accidental Deletion of Logged-In User during CSV Re-import
+## 3. Business Logic & Domain Cases
+
+### Case 7: Settlement Classification Error
+* **AI Mistake**: The AI classified Row 14 ("Rohan paid Aisha back", ₹5,000) as a standard shared expense.
+* **How Identified**: Group balances became corrupted because Rohan was credited with paying an expense (increasing what others owed him), rather than recording a bilateral settlement that should have reduced his debt to Aisha.
+* **Correction**: Wrote a pattern detection rule in the CSV parser. If the note mentions "paid back" and has no split type, it is parsed as a `Settlement` record instead of an `Expense`. We also created a dedicated `Settlement` database table to track these payments separately.
+
+---
+
+### Case 8: Temporal Membership Timeline Violation
+* **AI Mistake**: The AI split the April 2nd electricity bill equally among all members, including Meera.
+* **How Identified**: Meera moved out of the flat on March 28th (as specified in the membership dates), so she should not have been charged for April expenses. 
+* **Correction**: Added `joinedAt` and `leftAt` columns to the `GroupMember` database model. Updated the expense splitting engine to compare the expense date against the active ranges of members, automatically excluding Meera and recalculating the split among the remaining active members.
+
+---
+
+### Case 9: Automatic/Silent Duplicate Deletion
+* **AI Mistake**: The AI parser identified duplicate rows (like Row 5 and 6, "Dinner at Marina Bites") and silently deleted Row 6 during the import stage.
+* **How Identified**: This violated Meera's requirement: *"Clean up the duplicates — but I want to approve anything the app deletes or changes."* It also failed the core evaluation criterion: *"A crashed import and a silent guess are both failing answers."*
+* **Correction**: Designed and implemented an **Interactive Import Wizard**. Instead of silently guessing, the app displays the duplicate conflicts in Step 2, allowing the user to review, compare the rows side-by-side (showing Row 5 had notes while Row 6 was bare), and confirm which row to keep.
+
+---
+
+### Case 10: Accidental Deletion of Logged-In User during Import
 * **AI Mistake**: The CSV import process was configured to delete all non-seeded database users during cleanup to avoid duplicate entries when re-importing the spreadsheet.
 * **How Identified**: After importing the CSV file, the logged-in user (`Devyansh Verma`) was automatically logged out and their account was completely removed from the SQLite database.
 * **Correction**: Updated the Prisma deletion filter in the CSV import transaction to query only users who have no active accounts or sessions, ensuring registered users are never deleted.
-
