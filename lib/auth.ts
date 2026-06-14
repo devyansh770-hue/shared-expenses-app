@@ -15,5 +15,9 @@ export const auth = betterAuth({
     ],
     advanced: {
         trustedProxyHeaders: true,
+    },
+    session: {
+        expiresIn: 60 * 60 * 24 * 7, // Session expires after 7 days
+        updateAge: 60 * 60 * 24,     // Refresh session expiration if active within 24 hours (sliding window)
     }
 });
