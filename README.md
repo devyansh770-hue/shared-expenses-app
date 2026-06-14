@@ -33,22 +33,39 @@ Follow these steps to run the application locally:
 npm install
 ```
 
-### 2. Configure Database & Migrations
-Generate the Prisma Client types and run the local migrations to initialize the SQLite database file:
+### 2. Configure Environment Variables
+Create a `.env` file at the root of the project and add the following variables:
+```env
+DATABASE_URL="file:./dev.db"
+BETTER_AUTH_SECRET="your_32_character_high_entropy_secret_here"
+BETTER_AUTH_URL="http://localhost:3000"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+```
+*(Note: For local development, `supersecret123` can be used as the secret, but a random 32-character string is recommended in production. If accessing the app from a network IP, update the URLs accordingly).*
+
+### 3. Generate Database Client
+Generate the Prisma Client types:
 ```bash
 npx prisma generate
-npx prisma migrate dev --name init
 ```
+*(Note: The app uses an SQLite database `dev.db` which is portable and self-contained).*
 
-### 3. Run the Development Server
+### 4. Run the Development Server
 ```bash
 npm run dev
 ```
+Open [http://localhost:3000](http://localhost:3000) (or the network IP shown in your terminal) in your browser. The app will automatically seed the database with the default flatmates (Aisha, Rohan, Priya, Meera, Dev, Sam) and default timeline ranges.
 
-Open [http://localhost:3000](http://localhost:3000) in your browser. The app will automatically seed the database with the default flatmates (Aisha, Rohan, Priya, Meera, Dev, Sam) and default timeline ranges.
+### 5. Running Production Build
+To validate or run the optimized production bundle locally:
+```bash
+npm run build
+npm start
+```
 
 ---
 
 ## 🤖 AI Usage
 
-This project was built in collaboration with **Antigravity (Gemini 3.5 Flash)**. Detailed prompts, corrections, and AI logs can be reviewed in [AI_USAGE.md](file:///c:/Users/Devyansh%20verma/OneDrive/Desktop/spreetail/AI_USAGE.md).
+This project was built in collaboration with **Antigravity (Gemini 3.5 Flash)**. Detailed prompts, corrections, and the 8 concrete debugging case studies can be reviewed in the comprehensive AI logs in [AI_USAGE.md](file:///c:/Users/Devyansh%20verma/OneDrive/Desktop/spreetail/AI_USAGE.md).
+
