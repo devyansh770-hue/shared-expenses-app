@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, CheckCircle2, Circle } from "lucide-react";
 
 export default function AuthForm({ type }: { type: "login" | "signup" }) {
   const router = useRouter();
@@ -13,28 +13,18 @@ export default function AuthForm({ type }: { type: "login" | "signup" }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
-  // Password strength logic
-  const getPasswordStrength = (pass: string) => {
-    if (!pass) return { score: 0, label: "None", color: "bg-slate-700" };
-    let score = 0;
-    if (pass.length >= 8) score++;
-    if (/[A-Z]/.test(pass)) score++;
-    if (/[0-9]/.test(pass)) score++;
-    if (/[^A-Za-z0-9]/.test(pass)) score++;
+  // Password rules
+  const rules = [
+    { label: "At least 8 characters", met: password.length >= 8 },
+    { label: "One uppercase letter (A-Z)", met: /[A-Z]/.test(password) },
+    { label: "One lowercase letter (a-z)", met: /[a-z]/.test(password) },
+    { label: "One number (0-9)", met: /[0-9]/.test(password) },
+    { label: "One special character (!@#$%)", met: /[!@#$%^&*]/.test(password) },
+  ];
 
-    switch (score) {
-      case 0:
-      case 1: return { score, label: "Weak", color: "bg-[#F85149]" };
-      case 2: return { score, label: "Fair", color: "bg-[#E3B341]" };
-      case 3: return { score, label: "Good", color: "bg-[#00E5CC]" };
-      case 4: return { score, label: "Strong", color: "bg-[#3FB950]" };
-      default: return { score: 0, label: "None", color: "bg-slate-700" };
-    }
-  };
-
-  const strength = getPasswordStrength(password);
-  const isStrongPassword = strength.score >= 3;
+  const isStrongPassword = rules.every(r => r.met);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +32,7 @@ export default function AuthForm({ type }: { type: "login" | "signup" }) {
     setError(null);
 
     if (type === "signup" && !isStrongPassword) {
-      setError("Please choose a stronger password (needs minimum 8 chars, uppercase, and numbers/symbols).");
+      setError("Please ensure your password meets all requirements.");
       setLoading(false);
       return;
     }
@@ -110,45 +100,48 @@ export default function AuthForm({ type }: { type: "login" | "signup" }) {
       </div>
 
       <div>
-        <div className="flex items-center justify-between mb-1">
-          <label className="block text-sm font-medium text-slate-300">Password</label>
-          {type === "signup" && password.length > 0 && (
-            <div className={`flex items-center gap-1.5 text-xs font-semibold ${isStrongPassword ? 'text-[#3FB950]' : 'text-slate-500'}`}>
-              {isStrongPassword && <CheckCircle2 className="w-3.5 h-3.5" />}
-              {isStrongPassword ? 'Strong password' : 'Needs to be stronger'}
-            </div>
-          )}
-        </div>
-        
+        <label className="block text-sm font-medium text-slate-300">Password</label>
         <div className="mt-1 relative">
           <input
             type={showPassword ? "text" : "password"}
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             className="appearance-none block w-full px-3 py-2 border border-white/10 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-[#00E5CC] focus:border-[#00E5CC] sm:text-sm bg-white/5 text-white pr-10 transition-all"
             placeholder="••••••••"
           />
           <button
             type="button"
-            className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white transition-colors"
-            onClick={() => setShowPassword(!showPassword)}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white transition-colors z-10 cursor-pointer"
+            onMouseDown={(e) => {
+              e.preventDefault(); // Prevents input from losing focus
+              setShowPassword(!showPassword);
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+            }}
             tabIndex={-1}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
         
-        {type === "signup" && password.length > 0 && (
-          <div className="mt-2">
-            <div className="flex gap-1 h-1 w-full mt-2">
-              {[1, 2, 3, 4].map((i) => (
-                <div 
-                  key={i} 
-                  className={`flex-1 rounded-full transition-all duration-300 ${i <= strength.score ? strength.color : 'bg-white/10'}`} 
-                />
-              ))}
-            </div>
+        {type === "signup" && (isFocused || password.length > 0) && (
+          <div className="mt-3 space-y-2 p-3 bg-[#0D1117]/50 rounded-md border border-white/5">
+            {rules.map((rule, idx) => (
+              <div key={idx} className="flex items-center gap-2 text-xs transition-colors duration-300">
+                {rule.met ? (
+                  <CheckCircle2 className="w-4 h-4 text-[#00E5CC] transition-transform duration-300 scale-110" />
+                ) : (
+                  <Circle className="w-4 h-4 text-slate-600" />
+                )}
+                <span className={rule.met ? "text-[#00E5CC]" : "text-slate-500"}>
+                  {rule.label}
+                </span>
+              </div>
+            ))}
           </div>
         )}
       </div>
