@@ -102,6 +102,7 @@ model AnomalyLog {
   csvRow      Int
   description String
   anomalyType String // "DUPLICATE", "DATE_FORMAT", "CURRENCY", "SPLIT_MISMATCH", "TEMPORAL_MEMBERSHIP", "SETTLEMENT", "MISSING_PAYER", "CASE_INCONSISTENCY"
+  severity    String   @default("MEDIUM") // "HIGH", "MEDIUM", "LOW"
   resolvedAt  DateTime @default(now())
   actionTaken String
 }
