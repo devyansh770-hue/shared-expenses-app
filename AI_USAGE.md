@@ -1,6 +1,6 @@
 # AI_USAGE.md - AI Tooling Log
 
-This document lists the AI tools used, key prompts, and ten concrete cases where the AI generated incorrect code or logic, how these issues were identified, and the engineering resolutions applied.
+This document lists the AI tools used, key prompts, and nine concrete cases where the AI generated incorrect code or logic, how these issues were identified, and the engineering resolutions applied.
 
 ---
 
@@ -92,10 +92,3 @@ This document lists the AI tools used, key prompts, and ten concrete cases where
 * **AI Mistake**: The AI parser identified duplicate rows (like Row 5 and 6, "Dinner at Marina Bites") and silently deleted Row 6 during the import stage.
 * **How Identified**: This violated Meera's requirement: *"Clean up the duplicates — but I want to approve anything the app deletes or changes."* It also failed the core evaluation criterion: *"A crashed import and a silent guess are both failing answers."*
 * **Correction**: Designed and implemented an **Interactive Import Wizard**. Instead of silently guessing, the app displays the duplicate conflicts in Step 2, allowing the user to review, compare the rows side-by-side (showing Row 5 had notes while Row 6 was bare), and confirm which row to keep.
-
----
-
-### Case 10: Accidental Deletion of Logged-In User during Import
-* **AI Mistake**: The CSV import process was configured to delete all non-seeded database users during cleanup to avoid duplicate entries when re-importing the spreadsheet.
-* **How Identified**: After importing the CSV file, the logged-in user (`Devyansh Verma`) was automatically logged out and their account was completely removed from the SQLite database.
-* **Correction**: Updated the Prisma deletion filter in the CSV import transaction to query only users who have no active accounts or sessions, ensuring registered users are never deleted.
