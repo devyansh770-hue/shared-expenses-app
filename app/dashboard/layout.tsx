@@ -2,63 +2,67 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Home, Users, Settings, LogOut, Zap, LayoutDashboard, Receipt } from "lucide-react";
+import { Zap, LayoutDashboard, Upload, Receipt, Wallet, Handshake, Users, LogOut } from "lucide-react";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session) {
     redirect("/login");
   }
 
+  const navItems = [
+    { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Import CSV", href: "/dashboard/import", icon: Upload },
+    { name: "Expenses", href: "/dashboard/expenses", icon: Receipt },
+    { name: "Balances", href: "/dashboard/balances", icon: Wallet },
+    { name: "Settlements", href: "/dashboard/settlements", icon: Handshake },
+    { name: "Members", href: "/dashboard/members", icon: Users },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#0a0d14] text-white flex">
+    <div className="min-h-screen bg-[#0D1117] text-[#E6EDF3] flex flex-col md:flex-row font-sans selection:bg-[#00E5CC]/30">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-white/5 bg-[#121824]/50 hidden md:flex flex-col">
-        <div className="h-20 flex items-center px-6 border-b border-white/5">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00f2fe] to-[#4facfe] flex items-center justify-center shadow-[0_0_15px_rgba(0,242,254,0.3)]">
-              <Zap className="w-4 h-4 text-black fill-black" />
+      <aside className="w-full md:w-64 bg-[#161B22] border-r border-[#30363D] flex-shrink-0 z-10 sticky top-0 md:h-screen flex flex-col">
+        {/* Logo Area */}
+        <div className="h-16 flex items-center px-6 border-b border-[#30363D]">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="w-8 h-8 rounded-md bg-[#00E5CC] flex items-center justify-center group-hover:shadow-[0_0_15px_rgba(0,229,204,0.4)] transition-all">
+              <Zap className="w-4 h-4 text-[#0D1117] fill-[#0D1117]" />
             </div>
-            <span className="font-bold font-heading tracking-tight text-lg">SplitSphere</span>
+            <span className="font-bold text-lg tracking-tight" style={{ fontFamily: "var(--font-display)" }}>
+              SplitSphere
+            </span>
           </Link>
         </div>
 
-        <nav className="flex-1 py-6 px-4 space-y-2">
-          <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-white/5 text-[#00f2fe] font-medium border border-white/10">
-            <LayoutDashboard className="w-5 h-5" />
-            Dashboard
-          </Link>
-          <Link href="/dashboard/groups" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors font-medium">
-            <Users className="w-5 h-5" />
-            Groups
-          </Link>
-          <Link href="/dashboard/activity" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors font-medium">
-            <Receipt className="w-5 h-5" />
-            Recent Activity
-          </Link>
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
+          {navItems.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#30363D]/50 transition-colors group"
+            >
+              <item.icon className="w-4 h-4 group-hover:text-[#00E5CC] transition-colors" />
+              {item.name}
+            </Link>
+          ))}
         </nav>
 
-        <div className="p-4 border-t border-white/5">
-          <div className="flex items-center gap-3 px-3 py-2 mb-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#9c27b0] to-[#f43f5e] flex items-center justify-center text-sm font-bold shadow-[0_0_15px_rgba(156,39,176,0.3)]">
+        {/* User Area */}
+        <div className="p-4 border-t border-[#30363D]">
+          <div className="flex items-center gap-3 mb-4 px-2">
+            <div className="w-8 h-8 rounded-full bg-[#30363D] flex items-center justify-center text-sm font-bold text-[#00E5CC]">
               {session.user.name.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{session.user.name}</p>
-              <p className="text-xs text-slate-500 truncate">{session.user.email}</p>
+              <p className="text-sm font-medium text-[#E6EDF3] truncate">{session.user.name}</p>
+              <p className="text-xs text-[#8B949E] truncate">{session.user.email}</p>
             </div>
           </div>
-          
-          <Link href="/dashboard/settings" className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors text-sm">
-            <Settings className="w-4 h-4" />
-            Settings
-          </Link>
-          
           <form action="/api/auth/signout" method="POST">
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-colors text-sm mt-1">
+             <button type="submit" className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-[#F85149] hover:bg-[#F85149]/10 transition-colors">
               <LogOut className="w-4 h-4" />
               Sign Out
             </button>
@@ -67,23 +71,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Mobile Header */}
-        <header className="h-16 md:hidden border-b border-white/5 bg-[#121824]/50 flex items-center justify-between px-4">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-[#00f2fe] fill-[#00f2fe]" />
-            <span className="font-bold font-heading">SplitSphere</span>
-          </Link>
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#9c27b0] to-[#f43f5e] flex items-center justify-center text-sm font-bold">
-            {session.user.name.charAt(0).toUpperCase()}
-          </div>
-        </header>
-
-        <div className="flex-1 overflow-auto bg-[#0a0d14]">
-          <div className="p-6 lg:p-8 max-w-6xl mx-auto w-full">
-            {children}
-          </div>
-        </div>
+      <main className="flex-1 min-w-0 overflow-y-auto p-6 md:p-8">
+        {children}
       </main>
     </div>
   );
