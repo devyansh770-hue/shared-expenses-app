@@ -1,3 +1,4 @@
+
 datasource db {
   provider = "sqlite"
 }
@@ -12,11 +13,19 @@ model User {
   createdAt DateTime @default(now())
 
   // Relationships
-  memberships      GroupMember[]
-  expensesPaid     Expense[]      @relation("PaidBy")
-  splits           ExpenseSplit[]
-  settlementsPaid  Settlement[]   @relation("SettlementPayer")
-  settlementsRecv  Settlement[]   @relation("SettlementReceiver")
+  memberships     GroupMember[]
+  expensesPaid    Expense[]      @relation("PaidBy")
+  splits          ExpenseSplit[]
+  settlementsPaid Settlement[]   @relation("SettlementPayer")
+  settlementsRecv Settlement[]   @relation("SettlementReceiver")
+  email           String
+  emailVerified   Boolean        @default(false)
+  image           String?
+  updatedAt       DateTime       @updatedAt
+  sessions        Session[]
+  accounts        Account[]
+
+  @@unique([email])
 }
 
 model Group {
@@ -30,11 +39,11 @@ model Group {
 }
 
 model GroupMember {
-  id        String    @id @default(uuid())
-  groupId   String
-  userId    String
-  joinedAt  DateTime  @default(now())
-  leftAt    DateTime? // Null means still active. Used to check temporal membership.
+  id       String    @id @default(uuid())
+  groupId  String
+  userId   String
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime? // Null means still active. Used to check temporal membership.
 
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -47,11 +56,11 @@ model Expense {
   groupId      String
   description  String
   paidById     String
-  amount       Float    // Original amount in input currency
-  currency     String   // e.g. "INR" or "USD"
+  amount       Float // Original amount in input currency
+  currency     String // e.g. "INR" or "USD"
   exchangeRate Float    @default(1.0) // Rate of currency relative to base (INR)
-  amountInBase Float    // Amount in INR
-  splitType    String   // "equal", "unequal", "percentage", "share"
+  amountInBase Float // Amount in INR
+  splitType    String // "equal", "unequal", "percentage", "share"
   date         DateTime
   notes        String?
   createdAt    DateTime @default(now())
@@ -65,7 +74,7 @@ model ExpenseSplit {
   id        String @id @default(uuid())
   expenseId String
   userId    String
-  amount    Float  // The share amount this user owes in base currency (INR)
+  amount    Float // The share amount this user owes in base currency (INR)
   share     Float? // The raw share (percentage or share count) if applicable
 
   expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
@@ -79,20 +88,65 @@ model Settlement {
   groupId    String
   payerId    String
   receiverId String
-  amount     Float    // Settlement amount in base currency (INR)
+  amount     Float // Settlement amount in base currency (INR)
   date       DateTime
   notes      String?
   createdAt  DateTime @default(now())
 
-  payer    User  @relation("SettlementPayer", fields: [payerId], references: [id], onDelete: Cascade)
-  receiver User  @relation("SettlementReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  payer    User @relation("SettlementPayer", fields: [payerId], references: [id], onDelete: Cascade)
+  receiver User @relation("SettlementReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
 }
 
 model AnomalyLog {
-  id           String   @id @default(uuid())
-  csvRow       Int
-  description  String
-  anomalyType  String   // "DUPLICATE", "DATE_FORMAT", "CURRENCY", "SPLIT_MISMATCH", "TEMPORAL_MEMBERSHIP", "SETTLEMENT", "MISSING_PAYER", "CASE_INCONSISTENCY"
-  resolvedAt   DateTime @default(now())
-  actionTaken  String
+  id          String   @id @default(uuid())
+  csvRow      Int
+  description String
+  anomalyType String // "DUPLICATE", "DATE_FORMAT", "CURRENCY", "SPLIT_MISMATCH", "TEMPORAL_MEMBERSHIP", "SETTLEMENT", "MISSING_PAYER", "CASE_INCONSISTENCY"
+  resolvedAt  DateTime @default(now())
+  actionTaken String
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
 }
