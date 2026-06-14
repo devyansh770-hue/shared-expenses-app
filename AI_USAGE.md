@@ -1,6 +1,6 @@
 # AI_USAGE.md - AI Tooling Log
 
-This document lists the AI tools used, key prompts, and three concrete instances where the AI generated incorrect code, how it was identified, and the engineering resolutions applied.
+This document lists the AI tools used, key prompts, and eight concrete instances where the AI generated incorrect code, how it was identified, and the engineering resolutions applied.
 
 ---
 
