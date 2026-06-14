@@ -116,12 +116,20 @@ export default function LandingPage() {
           </div>
 
           {/* CTA */}
-          <Link
-            href="/login"
-            className="px-5 py-[7px] rounded-md text-[13px] font-semibold text-white border border-[#30363D] hover:border-[#8B949E] hover:bg-white/5 transition-all"
-          >
-            Sign In
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/login"
+              className="px-5 py-[7px] rounded-md text-[13px] font-semibold text-[#8B949E] hover:text-white transition-all"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/signup"
+              className="px-5 py-[7px] rounded-md text-[13px] font-semibold text-[#0D1117] bg-[#00E5CC] hover:bg-[#00D4BD] shadow-[0_0_12px_rgba(0,229,204,0.3)] hover:shadow-[0_0_20px_rgba(0,229,204,0.4)] transition-all"
+            >
+              Sign Up
+            </Link>
+          </div>
         </div>
       </nav>
 
