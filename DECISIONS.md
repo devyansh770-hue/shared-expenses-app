@@ -57,3 +57,13 @@ This document records the architectural, product, and engineering decisions made
   1. *Aggregated Balances*: Show just the final balance number (leads to "magic numbers").
   2. *Line-Item Audit Ledgers*: A ledger for each member showing the date, description, payer, bill amount, user's share, and a running balance.
 * **Rationale**: Directly answers Rohan's request: *"No magic numbers. If the app says I owe ₹2,300, I want to see exactly which expenses make that up."* By selecting their name, Rohan can trace every single deposit, refund, expense share, and settlement that contributes to his final balance.
+
+---
+
+## 7. Custom Dropdown Selectors for Temporal Dates
+* **Decision**: Custom Day / Month (Jan-Dec) / Year dropdown selectors for active membership editing.
+* **Options Considered**:
+  1. *Native Date Inputs (`<input type="date">`)*: Simple to write, but highly inconsistent across browsers/locales (sometimes swapping day/month segments and leading to visual bugs like "month 21") and prone to timezone offsets.
+  2. *Custom Dropdowns*: Dropdown select fields restricting days (1-31), months (Jan-Dec), and years (2024-2028), paired with custom calendar validation.
+* **Rationale**: Custom dropdowns ensure date input is 100% bug-free and user-friendly on all platforms. Months are strictly bound to 1-12 (labeled "Jan" to "Dec"), preventing regional browser settings from swapping day/month fields and eliminating timezone offset bugs by standardizing absolute UTC string construction.
+

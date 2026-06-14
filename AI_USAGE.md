@@ -48,3 +48,39 @@ This document lists the AI tools used, key prompts, and three concrete instances
   const path = require('path')
   ```
   This guarantees that Node.js native filesystem modules are only loaded during server-side execution, preventing client compilation issues.
+
+---
+
+### Case 4: React Hydration Mismatch Caused by Browser Extensions
+* **AI Mistake**: The AI omitted `suppressHydrationWarning` on the `<body>` element in `app/layout.tsx`.
+* **How Identified**: In development, browser password managers or translating extensions injected additional attributes (like `bis_register`) into the `<body>` tag, causing a React hydration mismatch. This stripped React event listeners, breaking the signup form button and eye-toggle interactions.
+* **Correction**: Added `suppressHydrationWarning` to the `<body>` element, informing React that it should ignore discrepancies in body attributes during client-side hydration.
+
+---
+
+### Case 5: Missing Required Fields during User Database Creation
+* **AI Mistake**: When creating user records inside `seedGroupAndUsers`, `importResolvedData`, and `addMemberToGroup`, the AI only passed `name` in `db.user.create`, forgetting that the database schema marks `email` and `emailVerified` as required.
+* **How Identified**: Executing the dashboard database seed action triggered a Prisma validation exception: `Argument email is missing`.
+* **Correction**: Modified all user creation actions to dynamically construct and save a standard format-compliant email address (e.g. `${name.toLowerCase()}@example.com`).
+
+---
+
+### Case 6: Stale PrismaClient in Dev Server Process Cache
+* **AI Mistake**: The AI regenerated the database client using `npx prisma generate` after updating the schema, but assumed the active Next.js Turbopack development server would automatically pick up the new package definitions in `node_modules`.
+* **How Identified**: API routes continued to throw `PrismaClientValidationError` indicating that the `email` argument was unknown, because the running node process held the old compiled package in memory.
+* **Correction**: Terminated the process on port 3000 (`npx kill-port 3000`), cleared the `.next` compilation folder cache, and launched a fresh `npm run dev` task.
+
+---
+
+### Case 7: Hardcoded Client Base URL vs Local Network IP Access
+* **AI Mistake**: The authentication client initialization was configured with a hardcoded `baseURL` fallback to `http://localhost:3000`.
+* **How Identified**: When accessing the development server from the network IP address (`http://172.22.124.119:3000`), the browser attempted to send sign-up fetches to `localhost:3000`, causing CORS/fetch errors because `localhost` was blocked or did not point to the server.
+* **Correction**: Updated `auth-client.ts` to dynamically retrieve `window.location.origin` if running in the browser, ensuring requests align with the domain from which the page was loaded.
+
+---
+
+### Case 8: Accidental Deletion of Logged-In User during CSV Re-import
+* **AI Mistake**: The CSV import process was configured to delete all non-seeded database users during cleanup to avoid duplicate entries when re-importing the spreadsheet.
+* **How Identified**: After importing the CSV file, the logged-in user (`Devyansh Verma`) was automatically logged out and their account was completely removed from the SQLite database.
+* **Correction**: Updated the Prisma deletion filter in the CSV import transaction to query only users who have no active accounts or sessions, ensuring registered users are never deleted.
+
