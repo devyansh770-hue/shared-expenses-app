@@ -1,0 +1,98 @@
+datasource db {
+  provider = "sqlite"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  // Relationships
+  memberships      GroupMember[]
+  expensesPaid     Expense[]      @relation("PaidBy")
+  splits           ExpenseSplit[]
+  settlementsPaid  Settlement[]   @relation("SettlementPayer")
+  settlementsRecv  Settlement[]   @relation("SettlementReceiver")
+}
+
+model Group {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  // Relationships
+  members  GroupMember[]
+  expenses Expense[]
+}
+
+model GroupMember {
+  id        String    @id @default(uuid())
+  groupId   String
+  userId    String
+  joinedAt  DateTime  @default(now())
+  leftAt    DateTime? // Null means still active. Used to check temporal membership.
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+}
+
+model Expense {
+  id           String   @id @default(uuid())
+  groupId      String
+  description  String
+  paidById     String
+  amount       Float    // Original amount in input currency
+  currency     String   // e.g. "INR" or "USD"
+  exchangeRate Float    @default(1.0) // Rate of currency relative to base (INR)
+  amountInBase Float    // Amount in INR
+  splitType    String   // "equal", "unequal", "percentage", "share"
+  date         DateTime
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  group  Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  paidBy User           @relation("PaidBy", fields: [paidById], references: [id], onDelete: Cascade)
+  splits ExpenseSplit[]
+}
+
+model ExpenseSplit {
+  id        String @id @default(uuid())
+  expenseId String
+  userId    String
+  amount    Float  // The share amount this user owes in base currency (INR)
+  share     Float? // The raw share (percentage or share count) if applicable
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([expenseId, userId])
+}
+
+model Settlement {
+  id         String   @id @default(uuid())
+  groupId    String
+  payerId    String
+  receiverId String
+  amount     Float    // Settlement amount in base currency (INR)
+  date       DateTime
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  payer    User  @relation("SettlementPayer", fields: [payerId], references: [id], onDelete: Cascade)
+  receiver User  @relation("SettlementReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+}
+
+model AnomalyLog {
+  id           String   @id @default(uuid())
+  csvRow       Int
+  description  String
+  anomalyType  String   // "DUPLICATE", "DATE_FORMAT", "CURRENCY", "SPLIT_MISMATCH", "TEMPORAL_MEMBERSHIP", "SETTLEMENT", "MISSING_PAYER", "CASE_INCONSISTENCY"
+  resolvedAt   DateTime @default(now())
+  actionTaken  String
+}

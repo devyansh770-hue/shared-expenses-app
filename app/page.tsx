@@ -365,18 +365,18 @@ export default function Home() {
       let rawSplitWithStr = row.split_with;
       
       // Parse split members
-      let splitMembers = rawSplitWithStr.split(';').map(m => m.trim()).filter(Boolean);
+      let splitMembers = rawSplitWithStr.split(';').map((m: string) => m.trim()).filter(Boolean);
       // Map names to system names
-      splitMembers = splitMembers.map(m => userMappings[m] || m);
+      splitMembers = splitMembers.map((m: string) => userMappings[m] || m);
 
       // Add Kabir as a Guest if unregistered
-      splitMembers = splitMembers.map(m => m === "Dev's friend Kabir" ? 'Kabir' : m);
+      splitMembers = splitMembers.map((m: string) => m === "Dev's friend Kabir" ? 'Kabir' : m);
 
       // Handle temporal exclusions:
       // Row 36 (Groceries BigBasket on April 2nd): split includes Meera, but she left.
       if (membershipActions[rowIndex] === 'exclude') {
         const originalMembersCount = splitMembers.length;
-        splitMembers = splitMembers.filter(m => m !== 'Meera');
+        splitMembers = splitMembers.filter((m: string) => m !== 'Meera');
         appliedAnomalyLogs.push({
           row: rowIndex,
           type: 'TEMPORAL_MEMBERSHIP',
@@ -401,7 +401,7 @@ export default function Home() {
 
       if (splitType === 'equal') {
         const splitAmt = Number((amountInBase / totalMembers).toFixed(2));
-        splitMembers.forEach((m) => {
+        splitMembers.forEach((m: string) => {
           splits.push({
             name: m,
             amount: splitAmt,
@@ -426,11 +426,11 @@ export default function Home() {
       } 
       else if (splitType === 'percentage' && row.split_details) {
         // Parse details e.g. "Aisha 30%; Rohan 30%; Priya 30%; Meera 20%" -> sums to 110%
-        const details = row.split_details.split(';').map(x => x.trim()).filter(Boolean);
+        const details = row.split_details.split(';').map((x: string) => x.trim()).filter(Boolean);
         const pctMap: Record<string, number> = {};
         let totalPct = 0;
         
-        details.forEach(d => {
+        details.forEach((d: string) => {
           const parts = d.split(/\s+/);
           const name = normalizeName(parts[0]).normalized;
           const pct = parseFloat(parts[parts.length - 1].replace('%', ''));
@@ -445,7 +445,7 @@ export default function Home() {
         const normalize = percentageNormalizations[rowIndex] || Math.abs(totalPct - 100) > 0.01;
         
         let splitSum = 0;
-        splitMembers.forEach((m) => {
+        splitMembers.forEach((m: string) => {
           const rawPct = pctMap[m] !== undefined ? pctMap[m] : (100 / totalMembers);
           const normPct = normalize ? (rawPct * 100 / totalPct) : rawPct;
           const splitAmt = Number((amountInBase * normPct / 100).toFixed(2));
@@ -474,10 +474,10 @@ export default function Home() {
       } 
       else if (splitType === 'unequal' && row.split_details) {
         // Parse details e.g. "Rohan 700; Priya 400; Meera 400"
-        const details = row.split_details.split(';').map(x => x.trim()).filter(Boolean);
+        const details = row.split_details.split(';').map((x: string) => x.trim()).filter(Boolean);
         const amtMap: Record<string, number> = {};
         
-        details.forEach(d => {
+        details.forEach((d: string) => {
           const parts = d.split(/\s+/);
           const name = normalizeName(parts[0]).normalized;
           const amt = parseFloat(parts[parts.length - 1]);
@@ -488,7 +488,7 @@ export default function Home() {
         });
 
         let splitSum = 0;
-        splitMembers.forEach((m) => {
+        splitMembers.forEach((m: string) => {
           const amt = amtMap[m] !== undefined ? amtMap[m] : 0;
           splits.push({
             name: m,
@@ -510,11 +510,11 @@ export default function Home() {
       } 
       else if (splitType === 'share' && row.split_details) {
         // Parse details e.g. "Aisha 1; Rohan 2; Priya 1; Dev 2" -> Total shares = 6
-        const details = row.split_details.split(';').map(x => x.trim()).filter(Boolean);
+        const details = row.split_details.split(';').map((x: string) => x.trim()).filter(Boolean);
         const shareMap: Record<string, number> = {};
         let totalShares = 0;
         
-        details.forEach(d => {
+        details.forEach((d: string) => {
           const parts = d.split(/\s+/);
           const name = normalizeName(parts[0]).normalized;
           const shares = parseFloat(parts[parts.length - 1]);
@@ -526,7 +526,7 @@ export default function Home() {
         });
 
         let splitSum = 0;
-        splitMembers.forEach((m) => {
+        splitMembers.forEach((m: string) => {
           const shares = shareMap[m] !== undefined ? shareMap[m] : 1;
           const splitAmt = Number((amountInBase * shares / totalShares).toFixed(2));
           splits.push({
