@@ -36,7 +36,10 @@ export async function seedGroupAndUsers() {
 
       if (!user) {
         user = await db.user.create({
-          data: { name: seed.name },
+          data: { 
+            name: seed.name,
+            email: `${seed.name.toLowerCase()}@example.com`,
+          },
         })
       }
 
@@ -382,7 +385,10 @@ export async function importResolvedData(
       for (const name of Array.from(allNamesInImport)) {
         if (!usersMap[name]) {
           const newUser = await tx.user.create({
-            data: { name },
+            data: { 
+              name,
+              email: `${name.toLowerCase().replace(/\s+/g, '')}@example.com`,
+            },
           })
           usersMap[name] = newUser.id
 
@@ -583,7 +589,10 @@ export async function addMemberToGroup(groupId: string, name: string, joinedAt: 
 
     if (!user) {
       user = await db.user.create({
-        data: { name },
+        data: { 
+          name,
+          email: `${name.toLowerCase().replace(/\s+/g, '')}@example.com`,
+        },
       })
     }
 
