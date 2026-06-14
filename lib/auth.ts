@@ -12,5 +12,8 @@ export const auth = betterAuth({
     trustedOrigins: [
         "http://localhost:3000",
         "http://172.22.124.119:3000"
-    ]
+    ],
+    advanced: {
+        trustedProxyHeaders: true,
+    }
 });
