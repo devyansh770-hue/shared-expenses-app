@@ -343,6 +343,12 @@ export async function importResolvedData(
         where: {
           NOT: {
             name: { in: seededNames }
+          },
+          accounts: {
+            none: {}
+          },
+          sessions: {
+            none: {}
           }
         }
       })

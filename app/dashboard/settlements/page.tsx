@@ -80,9 +80,9 @@ export default async function SettlementsPage() {
                 simplifiedDebts.map((debt: any, i: number) => (
                   <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-[#0D1117] border border-[#30363D]">
                     <div className="text-sm">
-                      <span className="font-semibold text-[#F85149]">{debt.from}</span>
+                      <span className="font-semibold text-[#F85149]">{debt.fromName}</span>
                       <span className="text-[#8B949E] mx-1">owes</span>
-                      <span className="font-semibold text-[#3FB950]">{debt.to}</span>
+                      <span className="font-semibold text-[#3FB950]">{debt.toName}</span>
                     </div>
                     <div className="font-bold text-[#E6EDF3]" style={{ fontFamily: "var(--font-mono)" }}>
                       ₹{debt.amount.toLocaleString()}

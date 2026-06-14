@@ -24,7 +24,9 @@ export default async function BalancesPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Object.entries(balances || {}).map(([name, amount]: [string, any]) => {
+        {(balances || []).map((b: any) => {
+          const name = b.name;
+          const amount = b.net;
           const isPositive = amount > 0;
           const isNegative = amount < 0;
           const isZero = amount === 0;
@@ -47,7 +49,7 @@ export default async function BalancesPage() {
           }
 
           return (
-            <div key={name} className="p-5 rounded-xl border flex flex-col" style={{ backgroundColor: bgStr, borderColor: borderStr }}>
+            <div key={b.userId} className="p-5 rounded-xl border flex flex-col" style={{ backgroundColor: bgStr, borderColor: borderStr }}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-base font-bold text-[#E6EDF3]">{name}</h3>
                 <Wallet className="w-4 h-4" style={{ color: colorStr }} />
