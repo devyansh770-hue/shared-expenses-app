@@ -31,7 +31,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ── Hero Section ── */}
-      <section className="relative pt-40 pb-20 px-6">
+      <section className="relative pt-56 pb-20 px-6">
         {/* Subtle background glow */}
         <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[500px] h-[400px] bg-[#00f2fe]/[0.04] rounded-full blur-[80px] pointer-events-none" />
         
@@ -43,7 +43,7 @@ export default function LandingPage() {
           </div>
           
           {/* Headline */}
-          <h1 className="text-[2.5rem] md:text-[3.25rem] font-bold tracking-tight leading-[1.2] mb-6">
+          <h1 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight mb-6">
             Turn messy spreadsheets into{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00f2fe] to-[#4facfe]">
               clear shared balances.
