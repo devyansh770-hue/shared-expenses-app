@@ -2,7 +2,15 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { db } from "./db";
 
-const appUrl = (process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+const appUrl = (
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
+    process.env.BETTER_AUTH_URL || 
+    process.env.NEXT_PUBLIC_APP_URL || 
+    "http://localhost:3000"
+).replace(/\/$/, "");
+
+const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "";
+const publicVercelUrl = process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : "";
 
 export const auth = betterAuth({
     database: prismaAdapter(db, {
@@ -15,8 +23,12 @@ export const auth = betterAuth({
     trustedOrigins: [
         "http://localhost:3000",
         "http://172.22.124.119:3000",
-        appUrl
-    ],
+        appUrl,
+        "https://shared-expenses-i3cxx69cx-devyansh770-hues-projects.vercel.app",
+        "https://shared-expenses-i3cxx69cx-devyansh770-hues-projects.vercel.app/",
+        vercelUrl,
+        publicVercelUrl
+    ].filter(Boolean),
     advanced: {
         trustedProxyHeaders: true,
     },
