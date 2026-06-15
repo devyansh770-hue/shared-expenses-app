@@ -326,7 +326,7 @@ export async function importResolvedData(
 ) {
   try {
     // Run in transaction
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: any) => {
       // 1. Clear previous expenses and settlements for this group
       await tx.expense.deleteMany({
         where: { groupId },
@@ -373,7 +373,7 @@ export async function importResolvedData(
       // First, get all current users
       const usersMap: Record<string, string> = {} // name -> id
       const allUsers = await tx.user.findMany()
-      allUsers.forEach(u => {
+      allUsers.forEach((u: any) => {
         usersMap[u.name] = u.id
       })
 
@@ -500,7 +500,7 @@ export async function createExpense(data: {
   try {
     const amountInBase = Number((data.amount * data.exchangeRate).toFixed(2))
 
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: any) => {
       const expense = await tx.expense.create({
         data: {
           groupId: data.groupId,
