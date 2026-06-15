@@ -11,8 +11,10 @@ export const auth = betterAuth({
     },
     trustedOrigins: [
         "http://localhost:3000",
-        "http://172.22.124.119:3000"
-    ],
+        "http://172.22.124.119:3000",
+        process.env.NEXT_PUBLIC_APP_URL || "",
+        process.env.BETTER_AUTH_URL || ""
+    ].filter(Boolean),
     advanced: {
         trustedProxyHeaders: true,
     },
