@@ -24,6 +24,8 @@ export const auth = betterAuth({
         "http://localhost:3000",
         "http://172.22.124.119:3000",
         appUrl,
+        "https://shared-expenses-app.tech",
+        "https://shared-expenses-app.tech/",
         "https://shared-expenses-app-blue.vercel.app",
         "https://shared-expenses-app-blue.vercel.app/",
         "https://shared-expenses-i3cxx69cx-devyansh770-hues-projects.vercel.app",
