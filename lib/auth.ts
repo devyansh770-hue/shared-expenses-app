@@ -2,19 +2,21 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { db } from "./db";
 
+const appUrl = (process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+
 export const auth = betterAuth({
     database: prismaAdapter(db, {
         provider: "sqlite",
     }),
+    baseURL: appUrl,
     emailAndPassword: {
         enabled: true,
     },
     trustedOrigins: [
         "http://localhost:3000",
         "http://172.22.124.119:3000",
-        process.env.NEXT_PUBLIC_APP_URL || "",
-        process.env.BETTER_AUTH_URL || ""
-    ].filter(Boolean),
+        appUrl
+    ],
     advanced: {
         trustedProxyHeaders: true,
     },
